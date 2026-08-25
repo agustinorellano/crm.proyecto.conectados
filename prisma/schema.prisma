@@ -1,0 +1,552 @@
+// Prisma schema — CRM Conectados
+// Base de datos relacional (PostgreSQL). Todas las entidades usan IDs (cuid)
+// como identificador único; nunca se usa el nombre como clave.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// USUARIOS Y PERMISOS
+// ─────────────────────────────────────────────────────────────────────────
+
+enum Role {
+  ADMIN
+  COMERCIAL
+  MARKETING
+  PROJECT_MANAGER
+  DESARROLLO
+  LECTURA
+}
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  password    String
+  firstName   String
+  lastName    String
+  avatarUrl   String?
+  role        Role     @default(LECTURA)
+  jobTitle    String?
+  phone       String?
+  hiredAt     DateTime?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  clientsOwned   Client[]        @relation("ClientOwner")
+  dealsOwned     Deal[]          @relation("DealOwner")
+  projectsOwned  Project[]       @relation("ProjectOwner")
+  tasksAssigned  Task[]          @relation("TaskAssignee")
+  taskComments   TaskComment[]
+  meetings       Meeting[]       @relation("MeetingOwner")
+  contentItems   ContentItem[]   @relation("ContentOwner")
+  proposalsOwned Proposal[]      @relation("ProposalOwner")
+  notes          Note[]
+  files          File[]
+  activities     Activity[]
+  notifications  Notification[]
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// CLIENTES Y CONTACTOS
+// ─────────────────────────────────────────────────────────────────────────
+
+enum ClientStatus {
+  PROSPECTO
+  CONTACTADO
+  REUNION
+  PROPUESTA_ENVIADA
+  NEGOCIACION
+  CLIENTE_NUEVO
+  ACTIVO
+  PAUSADO
+  INACTIVO
+  PERDIDO
+}
+
+model Client {
+  id             String       @id @default(cuid())
+  name           String
+  logoUrl        String?
+  industry       String?
+  taxId          String? // CUIT
+  website        String?
+  instagram      String?
+  linkedin       String?
+  phone          String?
+  email          String?
+  address        String?
+  ownerId        String?
+  owner          User?        @relation("ClientOwner", fields: [ownerId], references: [id])
+  status         ClientStatus @default(PROSPECTO)
+  monthlyValue   Decimal?     @db.Decimal(12, 2)
+  annualValue    Decimal?     @db.Decimal(12, 2)
+  driveFolderUrl String?
+  driveFolderId  String?
+  isDemo         Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  contacts       Contact[]
+  services       ClientService[]
+  projects       Project[]
+  tasks          Task[]
+  meetings       Meeting[]
+  calendarEvents CalendarEvent[]
+  contentItems   ContentItem[]
+  metricValues   MetricValue[]
+  proposals      Proposal[]
+  notes          Note[]
+  files          File[]
+  activities     Activity[]
+  deals          Deal[]
+  tags           ClientTag[]
+}
+
+model Contact {
+  id        String   @id @default(cuid())
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  firstName String
+  lastName  String
+  role      String?
+  email     String?
+  phone     String?
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  deals    Deal[]
+  meetings Meeting[]
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// PIPELINE COMERCIAL
+// ─────────────────────────────────────────────────────────────────────────
+
+enum DealStage {
+  LEAD
+  CONTACTADO
+  REUNION_AGENDADA
+  REUNION_REALIZADA
+  PROPUESTA_ENVIADA
+  NEGOCIACION
+  GANADO
+  PERDIDO
+}
+
+model Deal {
+  id             String    @id @default(cuid())
+  clientId       String
+  client         Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  contactId      String?
+  contact        Contact?  @relation(fields: [contactId], references: [id])
+  serviceId      String?
+  service        Service?  @relation(fields: [serviceId], references: [id])
+  title          String
+  stage          DealStage @default(LEAD)
+  value          Decimal?  @db.Decimal(12, 2)
+  probability    Int       @default(10) // 0-100
+  ownerId        String?
+  owner          User?     @relation("DealOwner", fields: [ownerId], references: [id])
+  nextActionAt   DateTime?
+  nextAction     String?
+  isDemo         Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// SERVICIOS
+// ─────────────────────────────────────────────────────────────────────────
+
+enum ServiceCategory {
+  COMUNICACION_DIGITAL
+  MARKETING_DIGITAL
+  DESARROLLO_WEB
+  SOLUCIONES_DIGITALES
+}
+
+model Service {
+  id          String          @id @default(cuid())
+  name        String
+  category    ServiceCategory
+  description String?
+  createdAt   DateTime        @default(now())
+
+  clientServices ClientService[]
+  deals          Deal[]
+  proposals      Proposal[]
+  projects       Project[]
+}
+
+model ClientService {
+  id         String   @id @default(cuid())
+  clientId   String
+  client     Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  serviceId  String
+  service    Service  @relation(fields: [serviceId], references: [id])
+  startedAt  DateTime @default(now())
+  endedAt    DateTime?
+  monthlyFee Decimal? @db.Decimal(12, 2)
+
+  @@unique([clientId, serviceId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// PROYECTOS Y TAREAS
+// ─────────────────────────────────────────────────────────────────────────
+
+enum ProjectStatus {
+  BACKLOG
+  POR_HACER
+  EN_PROGRESO
+  EN_REVISION
+  BLOQUEADO
+  COMPLETADO
+}
+
+enum Priority {
+  BAJA
+  MEDIA
+  ALTA
+  URGENTE
+}
+
+model Project {
+  id          String        @id @default(cuid())
+  name        String
+  clientId    String
+  client      Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  serviceId   String?
+  service     Service?      @relation(fields: [serviceId], references: [id])
+  ownerId     String?
+  owner       User?         @relation("ProjectOwner", fields: [ownerId], references: [id])
+  startDate   DateTime?
+  dueDate     DateTime?
+  priority    Priority      @default(MEDIA)
+  status      ProjectStatus @default(BACKLOG)
+  progress    Int           @default(0) // 0-100
+  description String?
+  isDemo      Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  tasks      Task[]
+  meetings   Meeting[]
+  files      File[]
+  activities Activity[]
+  tags       ProjectTag[]
+}
+
+enum TaskStatus {
+  BACKLOG
+  POR_HACER
+  EN_PROGRESO
+  EN_REVISION
+  BLOQUEADO
+  COMPLETADO
+}
+
+model Task {
+  id          String     @id @default(cuid())
+  title       String
+  description String?
+  clientId    String?
+  client      Client?    @relation(fields: [clientId], references: [id])
+  projectId   String?
+  project     Project?   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assigneeId  String?
+  assignee    User?      @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  priority    Priority   @default(MEDIA)
+  status      TaskStatus @default(POR_HACER)
+  dueDate     DateTime?
+  checklist   Json? // [{ text, done }]
+  isDemo      Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  comments TaskComment[]
+  files    File[]
+}
+
+model TaskComment {
+  id        String   @id @default(cuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  body      String
+  createdAt DateTime @default(now())
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// CALENDARIO Y REUNIONES
+// ─────────────────────────────────────────────────────────────────────────
+
+enum MeetingType {
+  LLAMADA
+  REUNION
+  VIDEOLLAMADA
+  PRESENTACION
+  SEGUIMIENTO
+}
+
+model Meeting {
+  id            String      @id @default(cuid())
+  title         String
+  type          MeetingType @default(REUNION)
+  clientId      String?
+  client        Client?     @relation(fields: [clientId], references: [id])
+  contactId     String?
+  contact       Contact?    @relation(fields: [contactId], references: [id])
+  projectId     String?
+  project       Project?    @relation(fields: [projectId], references: [id])
+  ownerId       String?
+  owner         User?       @relation("MeetingOwner", fields: [ownerId], references: [id])
+  startsAt      DateTime
+  endsAt        DateTime?
+  location      String?
+  notes         String?
+  googleEventId String?
+  isDemo        Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+}
+
+enum CalendarEventType {
+  LLAMADA
+  REUNION
+  VIDEOLLAMADA
+  PRESENTACION
+  ENTREGA
+  PUBLICACION
+  SEGUIMIENTO
+  DEADLINE
+}
+
+model CalendarEvent {
+  id        String            @id @default(cuid())
+  title     String
+  type      CalendarEventType
+  clientId  String?
+  client    Client?           @relation(fields: [clientId], references: [id])
+  startsAt  DateTime
+  endsAt    DateTime?
+  isDemo    Boolean           @default(false)
+  createdAt DateTime          @default(now())
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// CONTENIDO
+// ─────────────────────────────────────────────────────────────────────────
+
+enum ContentPlatform {
+  INSTAGRAM
+  TIKTOK
+  LINKEDIN
+  FACEBOOK
+  YOUTUBE
+  WEB
+  BLOG
+  EMAIL
+}
+
+enum ContentStatus {
+  IDEA
+  BRIEF
+  PRODUCCION
+  DISENO
+  REVISION
+  APROBADO
+  PROGRAMADO
+  PUBLICADO
+}
+
+model ContentItem {
+  id          String          @id @default(cuid())
+  clientId    String
+  client      Client          @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  platform    ContentPlatform
+  format      String?
+  title       String
+  copy        String?
+  objective   String?
+  scheduledAt DateTime?
+  ownerId     String?
+  owner       User?           @relation("ContentOwner", fields: [ownerId], references: [id])
+  status      ContentStatus   @default(IDEA)
+  link        String?
+  cta         String?
+  isDemo      Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  files File[]
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// MÉTRICAS (estructura flexible)
+// ─────────────────────────────────────────────────────────────────────────
+
+model MetricValue {
+  id        String   @id @default(cuid())
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  platform  String // instagram, web, seo, ads, ...
+  metric    String // followers, sessions, cpc, roas, ...
+  value     Decimal  @db.Decimal(18, 4)
+  periodStart DateTime
+  periodEnd   DateTime
+  isDemo    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([clientId, platform, metric])
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// PRESUPUESTOS / PROPUESTAS
+// ─────────────────────────────────────────────────────────────────────────
+
+enum ProposalStatus {
+  BORRADOR
+  ENVIADA
+  VISTA
+  NEGOCIACION
+  ACEPTADA
+  RECHAZADA
+}
+
+model Proposal {
+  id          String         @id @default(cuid())
+  clientId    String
+  client      Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  serviceId   String?
+  service     Service?       @relation(fields: [serviceId], references: [id])
+  ownerId     String?
+  owner       User?          @relation("ProposalOwner", fields: [ownerId], references: [id])
+  description String?
+  price       Decimal?       @db.Decimal(12, 2)
+  frequency   String? // mensual, anual, único
+  sentAt      DateTime?
+  expiresAt   DateTime?
+  status      ProposalStatus @default(BORRADOR)
+  isDemo      Boolean        @default(false)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// NOTAS, ARCHIVOS, ACTIVIDAD, NOTIFICACIONES, TAGS
+// ─────────────────────────────────────────────────────────────────────────
+
+model Note {
+  id        String   @id @default(cuid())
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  body      String
+  createdAt DateTime @default(now())
+}
+
+model File {
+  id            String       @id @default(cuid())
+  name          String
+  driveUrl      String?
+  driveFileId   String?
+  clientId      String?
+  client        Client?      @relation(fields: [clientId], references: [id])
+  projectId     String?
+  project       Project?     @relation(fields: [projectId], references: [id])
+  taskId        String?
+  task          Task?        @relation(fields: [taskId], references: [id])
+  contentItemId String?
+  contentItem   ContentItem? @relation(fields: [contentItemId], references: [id])
+  uploadedById  String?
+  uploadedBy    User?        @relation(fields: [uploadedById], references: [id])
+  createdAt     DateTime     @default(now())
+}
+
+enum ActivityType {
+  REUNION
+  LLAMADA
+  EMAIL
+  TAREA
+  PROPUESTA
+  CAMBIO_ESTADO
+  ARCHIVO
+  NOTA
+  CONTENIDO
+  PROYECTO
+}
+
+model Activity {
+  id        String       @id @default(cuid())
+  clientId  String?
+  client    Client?      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  projectId String?
+  project   Project?     @relation(fields: [projectId], references: [id])
+  userId    String?
+  user      User?        @relation(fields: [userId], references: [id])
+  type      ActivityType
+  message   String
+  createdAt DateTime     @default(now())
+
+  @@index([clientId, createdAt])
+}
+
+enum NotificationType {
+  TAREA_ASIGNADA
+  TAREA_VENCE_PRONTO
+  TAREA_VENCIDA
+  REUNION_PROXIMA
+  CONTENIDO_PROXIMO
+  PROPUESTA_PENDIENTE
+  CLIENTE_SIN_SEGUIMIENTO
+  COMENTARIO
+  MENCION
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  message   String
+  link      String?
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+}
+
+model Tag {
+  id    String @id @default(cuid())
+  name  String @unique
+  color String?
+
+  clients  ClientTag[]
+  projects ProjectTag[]
+}
+
+model ClientTag {
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  tagId    String
+  tag      Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([clientId, tagId])
+}
+
+model ProjectTag {
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tagId     String
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, tagId])
+}

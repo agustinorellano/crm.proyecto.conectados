@@ -1,0 +1,29 @@
+import {
+  LayoutDashboard,
+  Users,
+  GitBranch,
+  FolderKanban,
+  CheckSquare,
+  Calendar,
+  FileText,
+  BarChart3,
+  Archive,
+  Briefcase,
+  PieChart,
+  Settings,
+} from "lucide-react";
+
+export const navItems = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/clientes", label: "Clientes", icon: Users },
+  { href: "/pipeline", label: "Pipeline comercial", icon: GitBranch },
+  { href: "/proyectos", label: "Proyectos", icon: FolderKanban },
+  { href: "/tareas", label: "Tareas", icon: CheckSquare },
+  { href: "/calendario", label: "Calendario", icon: Calendar },
+  { href: "/contenido", label: "Contenido", icon: FileText },
+  { href: "/metricas", label: "Métricas", icon: BarChart3 },
+  { href: "/archivos", label: "Archivos", icon: Archive },
+  { href: "/servicios", label: "Servicios", icon: Briefcase },
+  { href: "/reportes", label: "Reportes", icon: PieChart },
+  { href: "/configuracion", label: "Configuración", icon: Settings },
+] as const;
