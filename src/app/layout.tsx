@@ -11,6 +11,11 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+// Es un CRM privado autenticado: ninguna página se beneficia de generación
+// estática, y NextAuth necesita request headers (no disponibles en build)
+// para resolver su base URL cuando NEXTAUTH_URL no está seteada.
+export const dynamic = "force-dynamic";
+
 export default function RootLayout({
   children,
 }: Readonly<{
