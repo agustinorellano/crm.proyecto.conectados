@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { navItems } from "./nav-config";
-import { LogoMark } from "@/components/brand/logo-mark";
+import { LogoBadge } from "@/components/brand/logo-mark";
 import clsx from "clsx";
 
 export function Sidebar() {
@@ -12,7 +12,7 @@ export function Sidebar() {
   return (
     <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 bg-ink-950 text-white">
       <div className="flex items-center gap-2 px-5 h-16 border-b border-white/10">
-        <LogoMark size={34} className="shrink-0" />
+        <LogoBadge size={36} />
         <div className="leading-tight">
           <p className="text-sm font-semibold tracking-tight">Conectados</p>
           <p className="text-[11px] text-ink-400">CRM &amp; Operations</p>
