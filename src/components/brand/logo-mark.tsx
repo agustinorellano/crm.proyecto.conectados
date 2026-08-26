@@ -14,7 +14,7 @@ export function LogoMark({ size = 32, className }: { size?: number; className?: 
           <stop offset="100%" stopColor="#1E1B4B" />
         </linearGradient>
       </defs>
-      <rect width="100" height="100" rx="24" fill="url(#conectados-logo-gradient)" />
+      <rect width="100" height="100" rx="28" fill="url(#conectados-logo-gradient)" />
       <circle cx="36" cy="50" r="26" stroke="white" strokeWidth="10" />
       <circle cx="64" cy="50" r="26" stroke="white" strokeWidth="10" />
     </svg>

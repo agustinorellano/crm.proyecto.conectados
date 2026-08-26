@@ -20,7 +20,7 @@ export function MobileSidebar() {
       <aside className="fixed inset-y-0 left-0 w-72 bg-ink-950 text-white flex flex-col">
         <div className="flex items-center justify-between px-5 h-16 border-b border-white/10">
           <div className="flex items-center gap-2">
-            <LogoMark size={32} className="rounded-lg shrink-0" />
+            <LogoMark size={34} className="shrink-0" />
             <p className="text-sm font-semibold">Conectados</p>
           </div>
           <button onClick={() => setMobileMenuOpen(false)} className="p-1">
@@ -37,8 +37,8 @@ export function MobileSidebar() {
                 href={item.href}
                 onClick={() => setMobileMenuOpen(false)}
                 className={clsx(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium",
-                  active ? "bg-brand-600 text-white" : "text-ink-300 hover:bg-white/5"
+                  "flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-sm font-medium",
+                  active ? "bg-brand-600 text-white shadow-sm" : "text-ink-300 hover:bg-white/5"
                 )}
               >
                 <Icon size={17} />
