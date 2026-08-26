@@ -3,6 +3,7 @@
 import { useState, Suspense } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { LogoMark } from "@/components/brand/logo-mark";
 
 function LoginForm() {
   const router = useRouter();
@@ -41,9 +42,7 @@ function LoginForm() {
       {/* Panel izquierdo — identidad */}
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 bg-gradient-to-br from-brand-950 via-ink-950 to-brand-900 text-white">
         <div className="flex items-center gap-2">
-          <div className="h-9 w-9 rounded-lg bg-brand-500 flex items-center justify-center font-bold">
-            C
-          </div>
+          <LogoMark size={36} className="rounded-lg shrink-0" />
           <span className="text-lg font-semibold tracking-tight">Conectados</span>
         </div>
         <div>
@@ -65,9 +64,7 @@ function LoginForm() {
       <div className="flex flex-1 items-center justify-center bg-ink-50 p-6">
         <div className="w-full max-w-sm">
           <div className="lg:hidden flex items-center gap-2 mb-8 justify-center">
-            <div className="h-9 w-9 rounded-lg bg-brand-600 flex items-center justify-center font-bold text-white">
-              C
-            </div>
+            <LogoMark size={36} className="rounded-lg shrink-0" />
             <span className="text-lg font-semibold tracking-tight text-ink-900">
               Conectados
             </span>

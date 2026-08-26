@@ -6,6 +6,7 @@ import clsx from "clsx";
 import { X } from "lucide-react";
 import { navItems } from "./nav-config";
 import { useUI } from "./ui-context";
+import { LogoMark } from "@/components/brand/logo-mark";
 
 export function MobileSidebar() {
   const { mobileMenuOpen, setMobileMenuOpen } = useUI();
@@ -19,9 +20,7 @@ export function MobileSidebar() {
       <aside className="fixed inset-y-0 left-0 w-72 bg-ink-950 text-white flex flex-col">
         <div className="flex items-center justify-between px-5 h-16 border-b border-white/10">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-brand-500 flex items-center justify-center font-bold text-sm">
-              C
-            </div>
+            <LogoMark size={32} className="rounded-lg shrink-0" />
             <p className="text-sm font-semibold">Conectados</p>
           </div>
           <button onClick={() => setMobileMenuOpen(false)} className="p-1">
