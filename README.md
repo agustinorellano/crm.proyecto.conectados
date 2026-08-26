@@ -18,25 +18,32 @@ brief del proyecto.
 - **NextAuth** (credenciales: email + contraseña) para autenticación
 - **@dnd-kit** para el Kanban de Pipeline y Tareas
 
-## 1. Configurar la base de datos
+## 1. Base de datos (Neon)
 
-Se necesita una base PostgreSQL accesible desde internet. Opciones rápidas y
-gratuitas:
+El proyecto ya está conectado a un proyecto de **Neon** (`crm-conectados`),
+con el schema completo aplicado y datos iniciales cargados (usuario admin +
+catálogo de servicios + datos demo marcados `isDemo: true`). Neon expone dos
+connection strings por rama:
 
-- [Neon](https://neon.tech) (recomendado, fácil de conectar con Vercel)
-- [Vercel Postgres](https://vercel.com/storage/postgres)
-- [Supabase](https://supabase.com)
+- **Pooled** (host con `-pooler`) → usarla como `DATABASE_URL` (tráfico normal
+  de la app).
+- **Directa** (host sin `-pooler`) → usarla como `DATABASE_URL_UNPOOLED` (la
+  usa Prisma para migraciones vía `directUrl` en `schema.prisma`).
 
-Copiá la connection string (con `?sslmode=require`) — la vas a necesitar en
-el paso 3.
+Podés ver/copiar ambas desde [console.neon.tech](https://console.neon.tech) →
+proyecto `crm-conectados` → "Connect".
+
+Si preferís usar otro proveedor (Vercel Postgres, Supabase, etc.), cualquier
+Postgres accesible por internet funciona igual — solo necesitás las dos
+connection strings.
 
 ## 2. Correr el proyecto en local
 
 ```bash
 npm install
-cp .env.example .env   # completar DATABASE_URL, NEXTAUTH_SECRET y datos del admin
-npx prisma db push     # crea las tablas en la base de datos
-npm run db:seed        # crea el usuario admin + catálogo de servicios + datos demo
+cp .env.example .env   # completar DATABASE_URL, DATABASE_URL_UNPOOLED, NEXTAUTH_SECRET y datos del admin
+npx prisma db push     # solo si cambiás el schema; la base ya tiene las tablas creadas
+npm run db:seed        # solo si necesitás recrear el usuario admin / catálogo / demo
 npm run dev
 ```
 
@@ -54,6 +61,14 @@ automáticamente a `/login`. Ingresá con el email/contraseña definidos en
 > interfaz funcionando. Podés desactivarlos seteando `SEED_DEMO=false` antes
 > de correr el seed, o borrarlos después desde la base de datos.
 
+> **Nota sobre este entorno de desarrollo (Claude Code on the web):** la
+> política de red de este sandbox bloquea conexiones TCP directas a Postgres
+> (puerto 5432) y a `neon.tech`, así que `prisma db push` / `npm run db:seed`
+> no se pueden correr desde acá — el schema y los datos iniciales se
+> cargaron usando el MCP server de Neon (que sí puede ejecutar SQL contra la
+> base). Esta restricción no aplica en Vercel ni en tu máquina local: ahí
+> `db push` y el seed funcionan de forma normal.
+
 ## 3. Subir a GitHub
 
 ```bash
@@ -70,21 +85,21 @@ git push -u origin main
 1. Entrá a [vercel.com/new](https://vercel.com/new) e importá el repositorio
    de GitHub.
 2. Framework Preset: **Next.js** (se detecta automáticamente).
-3. En **Environment Variables** cargá:
-   - `DATABASE_URL` → la connection string de Neon/Vercel Postgres/Supabase
+3. En **Environment Variables** cargá (los mismos valores que tenés en tu
+   `.env` local, apuntando al proyecto `crm-conectados` de Neon):
+   - `DATABASE_URL` → connection string **pooled** de Neon
+   - `DATABASE_URL_UNPOOLED` → connection string **directa** de Neon
    - `NEXTAUTH_URL` → la URL que te va a asignar Vercel, por ejemplo
      `https://crm-conectados.vercel.app` (podés actualizarla después del
      primer deploy)
    - `NEXTAUTH_SECRET` → el valor generado con `openssl rand -base64 32`
 4. Deploy. Vercel corre `npm run build`, que ya incluye `prisma generate`.
-5. Una vez deployado, corré la migración y el seed **una sola vez** apuntando
-   a la base de producción (desde tu máquina, con el `DATABASE_URL` de
-   producción en tu `.env` local):
-
-   ```bash
-   npx prisma db push
-   npm run db:seed
-   ```
+5. La base de Neon **ya tiene el schema y los datos iniciales cargados**
+   (usuario admin + catálogo de servicios + demo), así que no hace falta
+   correr `db push` ni el seed de nuevo. Si más adelante modificás
+   `prisma/schema.prisma`, corré `npx prisma db push` desde tu máquina (o
+   cualquier entorno con salida TCP libre) apuntando al `DATABASE_URL_UNPOOLED`
+   de producción.
 
 6. Entrá a la URL de Vercel → te redirige a `/login` → ingresá con el usuario
    admin creado en el seed.
