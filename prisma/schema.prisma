@@ -103,6 +103,7 @@ model Client {
   contentItems   ContentItem[]
   metricValues   MetricValue[]
   proposals      Proposal[]
+  invoices       Invoice[]
   notes          Note[]
   files          File[]
   activities     Activity[]
@@ -440,6 +441,36 @@ model Proposal {
   isDemo      Boolean        @default(false)
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// FACTURACIÓN
+// ─────────────────────────────────────────────────────────────────────────
+
+enum InvoiceStatus {
+  BORRADOR
+  ENVIADA
+  PAGADA
+  VENCIDA
+  CANCELADA
+}
+
+model Invoice {
+  id          String        @id @default(cuid())
+  number      String?
+  clientId    String
+  client      Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  description String?
+  amount      Decimal       @db.Decimal(12, 2)
+  issueDate   DateTime      @default(now())
+  dueDate     DateTime?
+  paidAt      DateTime?
+  status      InvoiceStatus @default(BORRADOR)
+  isDemo      Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([clientId, status])
 }
 
 // ─────────────────────────────────────────────────────────────────────────

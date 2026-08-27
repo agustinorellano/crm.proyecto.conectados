@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFormStatus } from "react-dom";
-import { X, Building2, Contact2, GitBranch, FolderKanban, CheckSquare, CalendarPlus, StickyNote, FileText, Receipt, Paperclip } from "lucide-react";
+import { X, Building2, Contact2, GitBranch, FolderKanban, CheckSquare, CalendarPlus, StickyNote, FileText, Receipt, Banknote, Paperclip } from "lucide-react";
 import { useUI } from "./ui-context";
 import { createClient } from "@/lib/actions/clients";
 import { createContact } from "@/lib/actions/contacts";
@@ -14,6 +14,7 @@ import { createMeeting } from "@/lib/actions/meetings";
 import { createNote } from "@/lib/actions/notes";
 import { createContentItem } from "@/lib/actions/content";
 import { createProposal } from "@/lib/actions/proposals";
+import { createInvoice } from "@/lib/actions/invoices";
 import { createFile } from "@/lib/actions/files";
 
 type EntityKey =
@@ -26,6 +27,7 @@ type EntityKey =
   | "contenido"
   | "nota"
   | "presupuesto"
+  | "factura"
   | "archivo";
 
 const ENTITIES: { key: EntityKey; label: string; icon: typeof Building2; needsClient: boolean }[] = [
@@ -38,6 +40,7 @@ const ENTITIES: { key: EntityKey; label: string; icon: typeof Building2; needsCl
   { key: "contenido", label: "Contenido", icon: FileText, needsClient: true },
   { key: "nota", label: "Nota", icon: StickyNote, needsClient: true },
   { key: "presupuesto", label: "Presupuesto", icon: Receipt, needsClient: true },
+  { key: "factura", label: "Factura", icon: Banknote, needsClient: true },
   { key: "archivo", label: "Archivo", icon: Paperclip, needsClient: true },
 ];
 
@@ -198,6 +201,19 @@ export function QuickCreate() {
                 <Field label="Precio (ARS)" name="price" type="number" />
                 <Field label="Frecuencia" name="frequency" placeholder="Mensual" />
               </div>
+              <SubmitBar loading={loading} onBack={() => setSelected(null)} />
+            </form>
+          )}
+
+          {selected === "factura" && (
+            <form action={(fd) => handleSubmit(createInvoice, fd)} className="space-y-3">
+              <ClientSelect clients={clients} />
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Número" name="number" placeholder="0001-00001234" />
+                <Field label="Monto (ARS) *" name="amount" type="number" required />
+              </div>
+              <Field label="Descripción" name="description" placeholder="Servicio de..." />
+              <Field label="Vencimiento" name="dueDate" type="date" />
               <SubmitBar loading={loading} onBack={() => setSelected(null)} />
             </form>
           )}

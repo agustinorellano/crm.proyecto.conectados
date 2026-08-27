@@ -101,6 +101,24 @@ export const proposalStatusLabels: Record<string, string> = {
   RECHAZADA: "Rechazada",
 };
 
+export const invoiceStatusLabels: Record<string, string> = {
+  BORRADOR: "Borrador",
+  ENVIADA: "Enviada",
+  PAGADA: "Pagada",
+  VENCIDA: "Vencida",
+  CANCELADA: "Cancelada",
+};
+
+export const invoiceStatuses = ["BORRADOR", "ENVIADA", "PAGADA", "VENCIDA", "CANCELADA"] as const;
+
+export const invoiceStatusColors: Record<string, string> = {
+  BORRADOR: "bg-ink-100 text-ink-600",
+  ENVIADA: "bg-blue-50 text-blue-700",
+  PAGADA: "bg-emerald-50 text-emerald-700",
+  VENCIDA: "bg-red-50 text-red-700",
+  CANCELADA: "bg-ink-100 text-ink-500",
+};
+
 export function formatCurrency(value: number | null | undefined) {
   if (value == null) return "—";
   return new Intl.NumberFormat("es-AR", {

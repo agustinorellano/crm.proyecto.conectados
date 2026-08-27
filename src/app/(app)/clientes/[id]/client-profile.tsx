@@ -28,6 +28,8 @@ import {
   formatCurrency,
   formatDate,
   formatDateTime,
+  invoiceStatusColors,
+  invoiceStatusLabels,
   priorityColors,
   priorityLabels,
   projectStatusLabels,
@@ -46,6 +48,7 @@ const TABS = [
   { key: "calendario", label: "Calendario" },
   { key: "contenido", label: "Contenido" },
   { key: "metricas", label: "Métricas" },
+  { key: "facturacion", label: "Facturación" },
   { key: "archivos", label: "Archivos" },
   { key: "notas", label: "Notas" },
 ] as const;
@@ -133,6 +136,7 @@ export function ClientProfile({ client }: { client: any }) {
           {tab === "calendario" && <CalendarioTab meetings={client.meetings} />}
           {tab === "contenido" && <ContenidoTab items={client.contentItems} />}
           {tab === "metricas" && <MetricasTab values={client.metricValues} />}
+          {tab === "facturacion" && <FacturacionTab invoices={client.invoices} />}
           {tab === "archivos" && <ArchivosTab files={client.files} />}
           {tab === "notas" && <NotasTab clientId={client.id} notes={client.notes} />}
         </div>
@@ -417,6 +421,68 @@ function MetricasTab({ values }: { values: any[] }) {
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+function FacturacionTab({ invoices }: { invoices: any[] }) {
+  const now = new Date();
+  const totalFacturado = invoices
+    .filter((i) => i.status !== "CANCELADA")
+    .reduce((acc, i) => acc + i.amount, 0);
+  const totalCobrado = invoices
+    .filter((i) => i.status === "PAGADA")
+    .reduce((acc, i) => acc + i.amount, 0);
+
+  if (invoices.length === 0)
+    return <EmptyHint text="Todavía no hay facturas registradas para este cliente." />;
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-xl bg-ink-50 px-4 py-3">
+          <p className="text-xs text-ink-500">Facturado total</p>
+          <p className="text-lg font-semibold text-ink-900 mt-0.5">{formatCurrency(totalFacturado)}</p>
+        </div>
+        <div className="rounded-xl bg-ink-50 px-4 py-3">
+          <p className="text-xs text-ink-500">Cobrado</p>
+          <p className="text-lg font-semibold text-emerald-600 mt-0.5">{formatCurrency(totalCobrado)}</p>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="min-w-full text-sm">
+          <thead>
+            <tr className="text-left text-ink-500 border-b border-ink-100">
+              <th className="py-2 pr-4 font-medium">Número</th>
+              <th className="py-2 pr-4 font-medium">Descripción</th>
+              <th className="py-2 pr-4 font-medium">Monto</th>
+              <th className="py-2 pr-4 font-medium">Vencimiento</th>
+              <th className="py-2 pr-4 font-medium">Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {invoices.map((inv) => {
+              const overdue =
+                inv.status !== "PAGADA" && inv.status !== "CANCELADA" && inv.dueDate && new Date(inv.dueDate) < now;
+              const effectiveStatus = overdue ? "VENCIDA" : inv.status;
+              return (
+                <tr key={inv.id} className="border-b border-ink-50 last:border-0">
+                  <td className="py-2 pr-4 text-ink-800">{inv.number || "—"}</td>
+                  <td className="py-2 pr-4 text-ink-600">{inv.description || "—"}</td>
+                  <td className="py-2 pr-4 text-ink-900 font-medium">{formatCurrency(inv.amount)}</td>
+                  <td className="py-2 pr-4 text-ink-400">{formatDate(inv.dueDate)}</td>
+                  <td className="py-2 pr-4">
+                    <Badge className={invoiceStatusColors[effectiveStatus]}>
+                      {invoiceStatusLabels[effectiveStatus]}
+                    </Badge>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

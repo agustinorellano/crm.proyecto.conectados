@@ -9,6 +9,7 @@ import {
   BarChart3,
   Archive,
   Briefcase,
+  Receipt,
   PieChart,
   Settings,
 } from "lucide-react";
@@ -22,6 +23,7 @@ export const navItems = [
   { href: "/calendario", label: "Calendario", icon: Calendar },
   { href: "/contenido", label: "Contenido", icon: FileText },
   { href: "/metricas", label: "Métricas", icon: BarChart3 },
+  { href: "/facturacion", label: "Facturación", icon: Receipt },
   { href: "/archivos", label: "Archivos", icon: Archive },
   { href: "/servicios", label: "Servicios", icon: Briefcase },
   { href: "/reportes", label: "Reportes", icon: PieChart },

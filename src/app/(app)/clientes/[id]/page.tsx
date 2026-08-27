@@ -17,6 +17,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
       contentItems: { orderBy: { scheduledAt: "asc" } },
       metricValues: { orderBy: { periodEnd: "desc" }, take: 20 },
       proposals: { orderBy: { createdAt: "desc" } },
+      invoices: { orderBy: { issueDate: "desc" } },
       notes: { orderBy: { createdAt: "desc" }, include: { author: { select: { firstName: true, lastName: true } } } },
       files: { orderBy: { createdAt: "desc" } },
       activities: {
@@ -38,6 +39,7 @@ export default async function ClientDetailPage({ params }: { params: { id: strin
       monthlyFee: s.monthlyFee ? Number(s.monthlyFee) : null,
     })),
     proposals: client.proposals.map((p) => ({ ...p, price: p.price ? Number(p.price) : null })),
+    invoices: client.invoices.map((i) => ({ ...i, amount: Number(i.amount) })),
     metricValues: client.metricValues.map((m) => ({ ...m, value: Number(m.value) })),
   };
 
